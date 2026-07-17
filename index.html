@@ -29,10 +29,6 @@
           <span class="metric-label">本周记录</span>
           <strong id="weekCount">0 天</strong>
         </div>
-        <div>
-          <span class="metric-label">平均热量</span>
-          <strong id="avgCalories">--</strong>
-        </div>
         <button id="installApp" class="install-button" type="button" hidden>安装到手机</button>
         <p id="installHint" class="install-hint" hidden>苹果手机请用 Safari 打开，然后点分享按钮，选择“添加到主屏幕”。</p>
       </div>
@@ -63,14 +59,6 @@
             目标体重 kg
             <input id="targetWeight" name="targetWeight" type="number" min="20" max="300" step="0.1" placeholder="例如 65">
           </label>
-          <label>
-            今日总热量 kcal
-            <input id="calories" name="calories" type="number" min="0" max="10000" step="1" placeholder="自动汇总" readonly>
-          </label>
-          <label>
-            每日热量上限 kcal
-            <input id="calorieLimit" name="calorieLimit" type="number" min="0" max="10000" step="1" placeholder="例如 1600">
-          </label>
         </div>
 
         <div class="meal-grid photo-grid" aria-label="每餐照片">
@@ -83,8 +71,6 @@
               <label class="small-button">相册<input id="breakfastPhoto" type="file" accept="image/*" data-meal="breakfast"></label>
               <label class="small-button">拍照<input id="breakfastCamera" type="file" accept="image/*" capture="environment" data-meal="breakfast"></label>
             </div>
-            <label class="calorie-field">早餐热量 kcal<input id="breakfastCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="breakfast" placeholder="自动估算"></label>
-            <p class="analysis-note" id="breakfastAnalysis">上传照片后自动分析热量</p>
           </article>
           <article class="meal-card" data-meal-card="lunch">
             <div class="photo-uploader">
@@ -95,8 +81,6 @@
               <label class="small-button">相册<input id="lunchPhoto" type="file" accept="image/*" data-meal="lunch"></label>
               <label class="small-button">拍照<input id="lunchCamera" type="file" accept="image/*" capture="environment" data-meal="lunch"></label>
             </div>
-            <label class="calorie-field">午餐热量 kcal<input id="lunchCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="lunch" placeholder="自动估算"></label>
-            <p class="analysis-note" id="lunchAnalysis">上传照片后自动分析热量</p>
           </article>
           <article class="meal-card" data-meal-card="dinner">
             <div class="photo-uploader">
@@ -107,8 +91,6 @@
               <label class="small-button">相册<input id="dinnerPhoto" type="file" accept="image/*" data-meal="dinner"></label>
               <label class="small-button">拍照<input id="dinnerCamera" type="file" accept="image/*" capture="environment" data-meal="dinner"></label>
             </div>
-            <label class="calorie-field">晚餐热量 kcal<input id="dinnerCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="dinner" placeholder="自动估算"></label>
-            <p class="analysis-note" id="dinnerAnalysis">上传照片后自动分析热量</p>
           </article>
           <article class="meal-card" data-meal-card="snacks">
             <div class="photo-uploader">
@@ -119,8 +101,6 @@
               <label class="small-button">相册<input id="snacksPhoto" type="file" accept="image/*" data-meal="snacks"></label>
               <label class="small-button">拍照<input id="snacksCamera" type="file" accept="image/*" capture="environment" data-meal="snacks"></label>
             </div>
-            <label class="calorie-field">加餐热量 kcal<input id="snacksCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="snacks" placeholder="自动估算"></label>
-            <p class="analysis-note" id="snacksAnalysis">上传照片后自动分析热量</p>
           </article>
         </div>
 
@@ -168,11 +148,6 @@
           <strong id="targetGap">--</strong>
           <div class="bar-track" aria-hidden="true"><span id="targetBar"></span></div>
         </div>
-        <div class="progress-card calorie-card">
-          <span class="metric-label">今日热量</span>
-          <strong id="calorieStatus">--</strong>
-          <div class="bar-track calorie-track" aria-hidden="true"><span id="calorieBar"></span></div>
-        </div>
         <div class="chart-wrap">
           <canvas id="weightChart" width="640" height="260" aria-label="最近体重趋势图"></canvas>
         </div>
@@ -180,8 +155,8 @@
           <p>今天的小重点</p>
           <ul>
             <li>每餐可从相册选择，也可直接拍照。</li>
-            <li>AI 估算会有误差，保存前可以手动修正。</li>
-            <li>总热量会自动汇总，并和每日上限对比。</li>
+            <li>照片里尽量拍到主食、蛋白质和饮料。</li>
+            <li>体重看 7 天趋势，不被单日波动牵着走。</li>
           </ul>
         </div>
       </aside>
@@ -216,9 +191,7 @@
       <div class="history-main">
         <div class="history-metrics">
           <span data-field="weight"></span>
-          <span data-field="calories"></span>
           <span data-field="water"></span>
-          <span data-field="limit"></span>
         </div>
         <div class="history-photos" data-field="mealPhotos"></div>
         <small data-field="extra"></small>

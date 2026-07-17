@@ -155,7 +155,7 @@ h2 {
 }
 
 .form-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .form-grid.compact {
@@ -253,30 +253,6 @@ textarea {
   pointer-events: none;
 }
 
-.calorie-field {
-  font-size: 12px;
-}
-
-.analysis-note {
-  min-height: 38px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.analysis-note.is-loading {
-  color: var(--blue);
-}
-
-.analysis-note.is-ready {
-  color: var(--green-dark);
-}
-
-.analysis-note.is-error {
-  color: var(--coral);
-}
-
 .photo-uploader span {
   position: relative;
   z-index: 2;
@@ -327,12 +303,6 @@ textarea {
 
 .photo-uploader.has-photo b {
   background: rgba(31, 95, 70, 0.92);
-}
-
-input[readonly] {
-  background: #f8f2e6;
-  color: var(--green-dark);
-  font-weight: 800;
 }
 
 input:focus,
@@ -445,10 +415,6 @@ button:active {
   background: linear-gradient(90deg, var(--green), var(--gold));
   border-radius: inherit;
   transition: width 0.25s ease;
-}
-
-.calorie-track span.is-over {
-  background: linear-gradient(90deg, var(--coral), #b74435);
 }
 
 .chart-wrap {

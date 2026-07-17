@@ -1,6 +1,9 @@
-const STORAGE_KEY = "weight-checkin-records-v3";
-const OLD_STORAGE_KEYS = ["weight-checkin-records-v2", "weight-checkin-records-v1"];
-const SETTINGS_KEY = "weight-checkin-settings-v1";
+const STORAGE_KEY = "weight-checkin-records-v4";
+const OLD_STORAGE_KEYS = [
+  "weight-checkin-records-v3",
+  "weight-checkin-records-v2",
+  "weight-checkin-records-v1",
+];
 const MEALS = [
   ["breakfast", "早餐"],
   ["lunch", "午餐"],
@@ -19,16 +22,12 @@ const installButton = document.querySelector("#installApp");
 const installHint = document.querySelector("#installHint");
 
 let currentMealPhotos = {};
-let currentMealCalories = {};
-let currentMealAnalysis = {};
 let deferredInstallPrompt = null;
 
 const fields = [
   "date",
   "weight",
   "targetWeight",
-  "calories",
-  "calorieLimit",
   "water",
   "exercise",
   "mood",
@@ -46,36 +45,10 @@ function formatDate(dateString) {
   return date.toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "short" });
 }
 
-function readSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
-  } catch {
-    return {};
-  }
-}
-
-function writeSettings(settings) {
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
 function normalizeEntry(entry) {
-  const mealPhotos = entry.mealPhotos || {};
-  const mealCalories = entry.mealCalories || {};
-  const mealAnalysis = entry.mealAnalysis || {};
-
-  MEALS.forEach(([meal]) => {
-    if (entry[meal] && !mealAnalysis[meal]) mealAnalysis[meal] = entry[meal];
-  });
-
-  const calories = entry.calories || Object.values(mealCalories).reduce((sum, value) => sum + (Number(value) || 0), 0) || "";
-
   return {
     ...entry,
-    calories,
-    calorieLimit: entry.calorieLimit || readSettings().calorieLimit || "",
-    mealPhotos,
-    mealCalories,
-    mealAnalysis,
+    mealPhotos: entry.mealPhotos || {},
   };
 }
 
@@ -98,24 +71,12 @@ function writeRecords(records) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
-function totalMealCalories() {
-  return MEALS.reduce((sum, [meal]) => sum + (Number(currentMealCalories[meal]) || 0), 0);
-}
-
-function syncTotalCalories() {
-  document.querySelector("#calories").value = totalMealCalories() || "";
-  updateCalorieStatus();
-}
-
 function getFormData() {
-  syncTotalCalories();
   const entry = fields.reduce((result, field) => {
     result[field] = document.querySelector(`#${field}`).value.trim();
     return result;
   }, {});
   entry.mealPhotos = { ...currentMealPhotos };
-  entry.mealCalories = { ...currentMealCalories };
-  entry.mealAnalysis = { ...currentMealAnalysis };
   return entry;
 }
 
@@ -126,12 +87,6 @@ function setPreview(meal, src = "") {
   uploader.classList.toggle("has-photo", Boolean(src));
 }
 
-function setAnalysisNote(meal, message, state = "") {
-  const note = document.querySelector(`#${meal}Analysis`);
-  note.textContent = message;
-  note.className = `analysis-note${state ? ` ${state}` : ""}`;
-}
-
 function resetPhotoInputs() {
   MEALS.forEach(([meal]) => {
     document.querySelector(`#${meal}Photo`).value = "";
@@ -140,30 +95,17 @@ function resetPhotoInputs() {
 }
 
 function setFormData(entry = {}) {
-  const settings = readSettings();
   currentMealPhotos = { ...(entry.mealPhotos || {}) };
-  currentMealCalories = { ...(entry.mealCalories || {}) };
-  currentMealAnalysis = { ...(entry.mealAnalysis || {}) };
 
   fields.forEach((field) => {
     const element = document.querySelector(`#${field}`);
     element.value = entry[field] || "";
   });
 
-  if (!entry.calorieLimit && settings.calorieLimit) {
-    document.querySelector("#calorieLimit").value = settings.calorieLimit;
-  }
-
-  MEALS.forEach(([meal]) => {
-    setPreview(meal, currentMealPhotos[meal]);
-    document.querySelector(`#${meal}Calories`).value = currentMealCalories[meal] || "";
-    setAnalysisNote(meal, currentMealAnalysis[meal] || "上传照片后自动分析热量", currentMealAnalysis[meal] ? "is-ready" : "");
-  });
-
+  MEALS.forEach(([meal]) => setPreview(meal, currentMealPhotos[meal]));
   resetPhotoInputs();
   if (!entry.date) document.querySelector("#date").value = todayISO();
   if (!entry.mood) document.querySelector("#mood").value = "平稳";
-  syncTotalCalories();
 }
 
 function sortedRecords(records = readRecords()) {
@@ -171,8 +113,6 @@ function sortedRecords(records = readRecords()) {
 }
 
 function saveEntry(entry) {
-  const settings = readSettings();
-  writeSettings({ ...settings, calorieLimit: entry.calorieLimit });
   const records = readRecords().filter((item) => item.date !== entry.date);
   records.push({ ...entry, updatedAt: new Date().toISOString() });
   writeRecords(sortedRecords(records));
@@ -198,47 +138,9 @@ function calculateStreak(records) {
   return streak;
 }
 
-function updateCalorieStatus(records = readRecords()) {
-  const currentDate = document.querySelector("#date").value || todayISO();
-  const savedToday = records.find((entry) => entry.date === currentDate);
-  const total = totalMealCalories() || Number(savedToday?.calories) || 0;
-  const limit = Number(document.querySelector("#calorieLimit").value || savedToday?.calorieLimit || readSettings().calorieLimit) || 0;
-  const status = document.querySelector("#calorieStatus");
-  const bar = document.querySelector("#calorieBar");
-
-  if (!total && !limit) {
-    status.textContent = "--";
-    bar.style.width = "0";
-    bar.classList.remove("is-over");
-    return;
-  }
-
-  if (!limit) {
-    status.textContent = `${total} kcal`;
-    bar.style.width = total ? "45%" : "0";
-    bar.classList.remove("is-over");
-    return;
-  }
-
-  const ratio = Math.min(100, Math.round((total / limit) * 100));
-  const over = total > limit;
-  status.textContent = over ? `超出 ${total - limit} kcal` : `剩余 ${limit - total} kcal`;
-  bar.style.width = `${Math.max(4, ratio)}%`;
-  bar.classList.toggle("is-over", over);
-}
-
 function updateStats(records) {
-  const streak = calculateStreak(records);
-  const weekRecords = records.filter((item) => sameWeek(item.date));
-  const calorieValues = weekRecords.map((item) => Number(item.calories)).filter(Boolean);
-  const avg = calorieValues.length
-    ? Math.round(calorieValues.reduce((sum, value) => sum + value, 0) / calorieValues.length)
-    : null;
-
-  document.querySelector("#streakDays").textContent = `${streak} 天`;
-  document.querySelector("#weekCount").textContent = `${weekRecords.length} 天`;
-  document.querySelector("#avgCalories").textContent = avg ? `${avg} kcal` : "--";
-  updateCalorieStatus(records);
+  document.querySelector("#streakDays").textContent = `${calculateStreak(records)} 天`;
+  document.querySelector("#weekCount").textContent = `${records.filter((item) => sameWeek(item.date)).length} 天`;
 
   const latest = sortedRecords(records).find((item) => Number(item.weight) && Number(item.targetWeight));
   const gapEl = document.querySelector("#targetGap");
@@ -266,7 +168,6 @@ function extraSummary(entry) {
 function renderMealPhotos(container, entry) {
   container.innerHTML = "";
   const photos = entry.mealPhotos || {};
-  const calories = entry.mealCalories || {};
   const photoMeals = MEALS.filter(([meal]) => photos[meal]);
 
   if (!photoMeals.length) {
@@ -283,7 +184,7 @@ function renderMealPhotos(container, entry) {
     const caption = document.createElement("figcaption");
     image.src = photos[meal];
     image.alt = `${label}照片`;
-    caption.textContent = calories[meal] ? `${label} ${calories[meal]} kcal` : label;
+    caption.textContent = label;
     figure.append(image, caption);
     container.appendChild(figure);
   });
@@ -307,9 +208,7 @@ function renderHistory() {
     node.querySelector('[data-field="date"]').textContent = formatDate(entry.date);
     node.querySelector('[data-field="mood"]').textContent = entry.mood || "平稳";
     node.querySelector('[data-field="weight"]').textContent = entry.weight ? `${entry.weight} kg` : "未填体重";
-    node.querySelector('[data-field="calories"]').textContent = entry.calories ? `${entry.calories} kcal` : "未填热量";
     node.querySelector('[data-field="water"]').textContent = entry.water ? `${entry.water} ml` : "未填饮水";
-    node.querySelector('[data-field="limit"]').textContent = entry.calorieLimit ? `上限 ${entry.calorieLimit} kcal` : "未设上限";
     renderMealPhotos(node.querySelector('[data-field="mealPhotos"]'), entry);
     node.querySelector('[data-field="extra"]').textContent = extraSummary(entry);
     node.querySelector('[data-action="edit"]').addEventListener("click", () => {
@@ -447,52 +346,6 @@ async function compressImage(file) {
   return canvas.toDataURL("image/jpeg", 0.78);
 }
 
-function applyMealCalories(meal, calories, analysis) {
-  currentMealCalories[meal] = calories ? String(calories) : "";
-  currentMealAnalysis[meal] = analysis || "";
-  document.querySelector(`#${meal}Calories`).value = currentMealCalories[meal];
-  setAnalysisNote(meal, analysis || "未识别出热量，可手动填写", analysis ? "is-ready" : "is-error");
-  syncTotalCalories();
-}
-
-async function analyzeMealPhoto(meal, imageData) {
-  const mealLabel = MEALS.find(([key]) => key === meal)?.[1] || "这餐";
-  setAnalysisNote(meal, "正在分析照片热量...", "is-loading");
-
-  if (location.protocol === "file:") {
-    setAnalysisNote(meal, "本地文件模式不能调用 AI，请发布到 Netlify 后再试", "is-error");
-    return;
-  }
-
-  try {
-    const response = await fetch("/.netlify/functions/analyze-meal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meal: mealLabel, imageData }),
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "AI 分析失败");
-    applyMealCalories(meal, result.calories, result.summary || `${mealLabel}约 ${result.calories} kcal`);
-  } catch (error) {
-    setAnalysisNote(meal, formatAnalyzeError(error), "is-error");
-  }
-}
-
-function formatAnalyzeError(error) {
-  const message = error?.message || "";
-  if (message.includes("Failed to fetch") || message.includes("Unexpected token")) {
-    return "AI 云函数未部署成功，请用 Netlify Git/CLI 发布而不是只静态上传";
-  }
-  if (message.includes("AI Key is not configured")) {
-    return "Netlify 未配置 OPENAI_API_KEY，请先添加环境变量";
-  }
-  if (message.includes("model") || message.includes("does not exist")) {
-    return "AI 模型不可用，请在 Netlify 设置 OPENAI_MODEL 为可用视觉模型";
-  }
-  return `AI 分析失败：${message || "请稍后重试，或手动填写热量"}`;
-}
-
 async function handleMealPhoto(event) {
   const file = event.target.files[0];
   const meal = event.target.dataset.meal;
@@ -501,12 +354,7 @@ async function handleMealPhoto(event) {
   try {
     const imageData = await compressImage(file);
     currentMealPhotos[meal] = imageData;
-    currentMealCalories[meal] = "";
-    currentMealAnalysis[meal] = "";
     setPreview(meal, imageData);
-    document.querySelector(`#${meal}Calories`).value = "";
-    syncTotalCalories();
-    await analyzeMealPhoto(meal, imageData);
   } catch {
     alert("这张照片读取失败，请换一张再试。");
   }
@@ -530,17 +378,8 @@ form.addEventListener("submit", (event) => {
 MEALS.forEach(([meal]) => {
   document.querySelector(`#${meal}Photo`).addEventListener("change", handleMealPhoto);
   document.querySelector(`#${meal}Camera`).addEventListener("change", handleMealPhoto);
-  document.querySelector(`#${meal}Calories`).addEventListener("input", (event) => {
-    currentMealCalories[meal] = event.target.value.trim();
-    if (event.target.value.trim()) {
-      currentMealAnalysis[meal] = "已手动修正热量";
-      setAnalysisNote(meal, currentMealAnalysis[meal], "is-ready");
-    }
-    syncTotalCalories();
-  });
 });
 
-document.querySelector("#calorieLimit").addEventListener("input", updateCalorieStatus);
 document.querySelector("#resetToday").addEventListener("click", () => setFormData({ date: todayISO() }));
 document.querySelector("#exportData").addEventListener("click", exportRecords);
 document.querySelector("#clearAll").addEventListener("click", () => {

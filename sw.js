@@ -1,4 +1,4 @@
-const CACHE_NAME = "weight-checkin-app-v2";
+const CACHE_NAME = "weight-checkin-app-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
