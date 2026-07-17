@@ -29,6 +29,10 @@
           <span class="metric-label">本周记录</span>
           <strong id="weekCount">0 天</strong>
         </div>
+        <div>
+          <span class="metric-label">今日摄入</span>
+          <strong id="todayCalories">0 kcal</strong>
+        </div>
         <button id="installApp" class="install-button" type="button" hidden>安装到手机</button>
         <p id="installHint" class="install-hint" hidden>苹果手机请用 Safari 打开，然后点分享按钮，选择“添加到主屏幕”。</p>
       </div>
@@ -71,6 +75,7 @@
               <label class="small-button">相册<input id="breakfastPhoto" type="file" accept="image/*" data-meal="breakfast"></label>
               <label class="small-button">拍照<input id="breakfastCamera" type="file" accept="image/*" capture="environment" data-meal="breakfast"></label>
             </div>
+            <label class="calorie-field">早餐卡路里 kcal<input id="breakfastCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="breakfast" placeholder="手动输入"></label>
           </article>
           <article class="meal-card" data-meal-card="lunch">
             <div class="photo-uploader">
@@ -81,6 +86,7 @@
               <label class="small-button">相册<input id="lunchPhoto" type="file" accept="image/*" data-meal="lunch"></label>
               <label class="small-button">拍照<input id="lunchCamera" type="file" accept="image/*" capture="environment" data-meal="lunch"></label>
             </div>
+            <label class="calorie-field">午餐卡路里 kcal<input id="lunchCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="lunch" placeholder="手动输入"></label>
           </article>
           <article class="meal-card" data-meal-card="dinner">
             <div class="photo-uploader">
@@ -91,6 +97,7 @@
               <label class="small-button">相册<input id="dinnerPhoto" type="file" accept="image/*" data-meal="dinner"></label>
               <label class="small-button">拍照<input id="dinnerCamera" type="file" accept="image/*" capture="environment" data-meal="dinner"></label>
             </div>
+            <label class="calorie-field">晚餐卡路里 kcal<input id="dinnerCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="dinner" placeholder="手动输入"></label>
           </article>
           <article class="meal-card" data-meal-card="snacks">
             <div class="photo-uploader">
@@ -101,6 +108,7 @@
               <label class="small-button">相册<input id="snacksPhoto" type="file" accept="image/*" data-meal="snacks"></label>
               <label class="small-button">拍照<input id="snacksCamera" type="file" accept="image/*" capture="environment" data-meal="snacks"></label>
             </div>
+            <label class="calorie-field">加餐卡路里 kcal<input id="snacksCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="snacks" placeholder="手动输入"></label>
           </article>
         </div>
 
@@ -148,6 +156,10 @@
           <strong id="targetGap">--</strong>
           <div class="bar-track" aria-hidden="true"><span id="targetBar"></span></div>
         </div>
+        <div class="progress-card">
+          <span class="metric-label">今日总卡路里</span>
+          <strong id="calorieStatus">0 kcal</strong>
+        </div>
         <div class="chart-wrap">
           <canvas id="weightChart" width="640" height="260" aria-label="最近体重趋势图"></canvas>
         </div>
@@ -155,8 +167,8 @@
           <p>今天的小重点</p>
           <ul>
             <li>每餐可从相册选择，也可直接拍照。</li>
+            <li>每餐卡路里需要手动输入，系统只做汇总。</li>
             <li>照片里尽量拍到主食、蛋白质和饮料。</li>
-            <li>体重看 7 天趋势，不被单日波动牵着走。</li>
           </ul>
         </div>
       </aside>
@@ -191,6 +203,7 @@
       <div class="history-main">
         <div class="history-metrics">
           <span data-field="weight"></span>
+          <span data-field="calories"></span>
           <span data-field="water"></span>
         </div>
         <div class="history-photos" data-field="mealPhotos"></div>

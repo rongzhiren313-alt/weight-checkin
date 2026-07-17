@@ -22,6 +22,7 @@ const installButton = document.querySelector("#installApp");
 const installHint = document.querySelector("#installHint");
 
 let currentMealPhotos = {};
+let currentMealCalories = {};
 let deferredInstallPrompt = null;
 
 const fields = [
@@ -46,9 +47,14 @@ function formatDate(dateString) {
 }
 
 function normalizeEntry(entry) {
+  const mealCalories = entry.mealCalories || {};
+  const totalCalories = Object.values(mealCalories).reduce((sum, value) => sum + (Number(value) || 0), 0);
+
   return {
     ...entry,
     mealPhotos: entry.mealPhotos || {},
+    mealCalories,
+    calories: totalCalories || entry.calories || "",
   };
 }
 
@@ -72,11 +78,14 @@ function writeRecords(records) {
 }
 
 function getFormData() {
+  syncCalories();
   const entry = fields.reduce((result, field) => {
     result[field] = document.querySelector(`#${field}`).value.trim();
     return result;
   }, {});
   entry.mealPhotos = { ...currentMealPhotos };
+  entry.mealCalories = { ...currentMealCalories };
+  entry.calories = totalCalories() || "";
   return entry;
 }
 
@@ -96,16 +105,21 @@ function resetPhotoInputs() {
 
 function setFormData(entry = {}) {
   currentMealPhotos = { ...(entry.mealPhotos || {}) };
+  currentMealCalories = { ...(entry.mealCalories || {}) };
 
   fields.forEach((field) => {
     const element = document.querySelector(`#${field}`);
     element.value = entry[field] || "";
   });
 
-  MEALS.forEach(([meal]) => setPreview(meal, currentMealPhotos[meal]));
+  MEALS.forEach(([meal]) => {
+    setPreview(meal, currentMealPhotos[meal]);
+    document.querySelector(`#${meal}Calories`).value = currentMealCalories[meal] || "";
+  });
   resetPhotoInputs();
   if (!entry.date) document.querySelector("#date").value = todayISO();
   if (!entry.mood) document.querySelector("#mood").value = "平稳";
+  syncCalories();
 }
 
 function sortedRecords(records = readRecords()) {
@@ -138,6 +152,16 @@ function calculateStreak(records) {
   return streak;
 }
 
+function totalCalories() {
+  return MEALS.reduce((sum, [meal]) => sum + (Number(currentMealCalories[meal]) || 0), 0);
+}
+
+function syncCalories() {
+  const total = totalCalories();
+  document.querySelector("#todayCalories").textContent = `${total} kcal`;
+  document.querySelector("#calorieStatus").textContent = `${total} kcal`;
+}
+
 function updateStats(records) {
   document.querySelector("#streakDays").textContent = `${calculateStreak(records)} 天`;
   document.querySelector("#weekCount").textContent = `${records.filter((item) => sameWeek(item.date)).length} 天`;
@@ -168,6 +192,7 @@ function extraSummary(entry) {
 function renderMealPhotos(container, entry) {
   container.innerHTML = "";
   const photos = entry.mealPhotos || {};
+  const calories = entry.mealCalories || {};
   const photoMeals = MEALS.filter(([meal]) => photos[meal]);
 
   if (!photoMeals.length) {
@@ -184,7 +209,7 @@ function renderMealPhotos(container, entry) {
     const caption = document.createElement("figcaption");
     image.src = photos[meal];
     image.alt = `${label}照片`;
-    caption.textContent = label;
+    caption.textContent = calories[meal] ? `${label} ${calories[meal]} kcal` : label;
     figure.append(image, caption);
     container.appendChild(figure);
   });
@@ -208,6 +233,7 @@ function renderHistory() {
     node.querySelector('[data-field="date"]').textContent = formatDate(entry.date);
     node.querySelector('[data-field="mood"]').textContent = entry.mood || "平稳";
     node.querySelector('[data-field="weight"]').textContent = entry.weight ? `${entry.weight} kg` : "未填体重";
+    node.querySelector('[data-field="calories"]').textContent = entry.calories ? `${entry.calories} kcal` : "未填卡路里";
     node.querySelector('[data-field="water"]').textContent = entry.water ? `${entry.water} ml` : "未填饮水";
     renderMealPhotos(node.querySelector('[data-field="mealPhotos"]'), entry);
     node.querySelector('[data-field="extra"]').textContent = extraSummary(entry);
@@ -378,6 +404,10 @@ form.addEventListener("submit", (event) => {
 MEALS.forEach(([meal]) => {
   document.querySelector(`#${meal}Photo`).addEventListener("change", handleMealPhoto);
   document.querySelector(`#${meal}Camera`).addEventListener("change", handleMealPhoto);
+  document.querySelector(`#${meal}Calories`).addEventListener("input", (event) => {
+    currentMealCalories[meal] = event.target.value.trim();
+    syncCalories();
+  });
 });
 
 document.querySelector("#resetToday").addEventListener("click", () => setFormData({ date: todayISO() }));

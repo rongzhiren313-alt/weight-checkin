@@ -253,6 +253,10 @@ textarea {
   pointer-events: none;
 }
 
+.calorie-field {
+  font-size: 12px;
+}
+
 .photo-uploader span {
   position: relative;
   z-index: 2;
