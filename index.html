@@ -1,221 +1,38 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>每日减脂打卡</title>
-  <meta name="theme-color" content="#2f7d5c">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="减脂打卡">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <link rel="stylesheet" href="./styles.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>每日减脂打卡</title><meta name="theme-color" content="#2f7d5c">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="减脂打卡">
+  <link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icons/icon-192.png"><link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="app-shell">
+    <header class="topbar"><a href="#" class="brand"><span class="brand-mark" aria-hidden="true">叶</span>每日减脂打卡<span class="version">2.0</span></a><div class="top-actions"><span id="networkStatus" class="status-pill">本机记录</span><button id="openSettings" type="button" class="text-button">识别设置</button></div></header>
     <section class="hero" aria-label="今日概览">
-      <div class="hero-copy">
-        <p class="kicker">每日减脂打卡</p>
-        <h1>拍下每餐，稳稳变轻</h1>
-        <p class="hero-note">今天是 <span id="todayLabel"></span>。不用写一大堆文字，把每餐拍下来，真实记录就已经很有力量。</p>
-      </div>
-      <div class="hero-panel">
-        <div>
-          <span class="metric-label">连续打卡</span>
-          <strong id="streakDays">0 天</strong>
-        </div>
-        <div>
-          <span class="metric-label">本周记录</span>
-          <strong id="weekCount">0 天</strong>
-        </div>
-        <div>
-          <span class="metric-label">今日摄入</span>
-          <strong id="todayCalories">0 kcal</strong>
-        </div>
-        <button id="installApp" class="install-button" type="button" hidden>安装到手机</button>
-        <p id="installHint" class="install-hint" hidden>苹果手机请用 Safari 打开，然后点分享按钮，选择“添加到主屏幕”。</p>
-      </div>
+      <div class="hero-copy"><p class="kicker" id="todayLabel"></p><h1>好好吃饭，<br>慢慢变好。</h1><p class="hero-note">从记录一餐开始。拍照、回顾，找到适合自己的节奏。</p><a class="hero-link" href="#entryForm">记录这一餐 <span aria-hidden="true">↗</span></a></div>
+      <div class="hero-panel"><div><span class="metric-label">连续打卡</span><strong id="streakDays">0 <small>天</small></strong></div><div><span class="metric-label">本周记录</span><strong id="weekCount">0 <small>天</small></strong></div><div><span class="metric-label">今日已记录热量</span><strong id="todayCalories">0 <small>kcal</small></strong></div><button id="installApp" type="button" class="install-button" hidden>安装到手机</button><p id="installHint" class="install-hint" hidden>iPhone：Safari → 分享 → 添加到主屏幕</p></div>
     </section>
-
-    <section class="dashboard" aria-label="打卡表单和历史">
+    <div id="storageWarning" class="notice warning" role="alert" hidden></div>
+    <section class="dashboard" aria-label="每日记录与趋势">
       <form id="entryForm" class="entry-form">
-        <div class="section-head">
-          <div>
-            <p class="kicker">Today's Log</p>
-            <h2>今日打卡</h2>
-          </div>
-          <button class="icon-button ghost" type="button" id="resetToday" title="清空今日表单" aria-label="清空今日表单">
-            <span aria-hidden="true">↺</span>
-          </button>
-        </div>
-
-        <div class="form-grid">
-          <label>
-            日期
-            <input id="date" name="date" type="date" required>
-          </label>
-          <label>
-            今日体重 kg
-            <input id="weight" name="weight" type="number" min="20" max="300" step="0.1" placeholder="例如 72.5">
-          </label>
-          <label>
-            目标体重 kg
-            <input id="targetWeight" name="targetWeight" type="number" min="20" max="300" step="0.1" placeholder="例如 65">
-          </label>
-        </div>
-
-        <div class="meal-grid photo-grid" aria-label="每餐照片">
-          <article class="meal-card" data-meal-card="breakfast">
-            <div class="photo-uploader">
-              <span>早餐照片</span>
-              <img id="breakfastPreview" alt="早餐照片预览">
-            </div>
-            <div class="meal-actions">
-              <label class="small-button">相册<input id="breakfastPhoto" type="file" accept="image/*" data-meal="breakfast"></label>
-              <label class="small-button">拍照<input id="breakfastCamera" type="file" accept="image/*" capture="environment" data-meal="breakfast"></label>
-            </div>
-            <label class="calorie-field">早餐卡路里 kcal<input id="breakfastCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="breakfast" placeholder="手动输入"></label>
-          </article>
-          <article class="meal-card" data-meal-card="lunch">
-            <div class="photo-uploader">
-              <span>午餐照片</span>
-              <img id="lunchPreview" alt="午餐照片预览">
-            </div>
-            <div class="meal-actions">
-              <label class="small-button">相册<input id="lunchPhoto" type="file" accept="image/*" data-meal="lunch"></label>
-              <label class="small-button">拍照<input id="lunchCamera" type="file" accept="image/*" capture="environment" data-meal="lunch"></label>
-            </div>
-            <label class="calorie-field">午餐卡路里 kcal<input id="lunchCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="lunch" placeholder="手动输入"></label>
-          </article>
-          <article class="meal-card" data-meal-card="dinner">
-            <div class="photo-uploader">
-              <span>晚餐照片</span>
-              <img id="dinnerPreview" alt="晚餐照片预览">
-            </div>
-            <div class="meal-actions">
-              <label class="small-button">相册<input id="dinnerPhoto" type="file" accept="image/*" data-meal="dinner"></label>
-              <label class="small-button">拍照<input id="dinnerCamera" type="file" accept="image/*" capture="environment" data-meal="dinner"></label>
-            </div>
-            <label class="calorie-field">晚餐卡路里 kcal<input id="dinnerCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="dinner" placeholder="手动输入"></label>
-          </article>
-          <article class="meal-card" data-meal-card="snacks">
-            <div class="photo-uploader">
-              <span>加餐 / 饮料照片</span>
-              <img id="snacksPreview" alt="加餐或饮料照片预览">
-            </div>
-            <div class="meal-actions">
-              <label class="small-button">相册<input id="snacksPhoto" type="file" accept="image/*" data-meal="snacks"></label>
-              <label class="small-button">拍照<input id="snacksCamera" type="file" accept="image/*" capture="environment" data-meal="snacks"></label>
-            </div>
-            <label class="calorie-field">加餐卡路里 kcal<input id="snacksCalories" type="number" min="0" max="5000" step="1" data-calorie-meal="snacks" placeholder="手动输入"></label>
-          </article>
-        </div>
-
-        <div class="form-grid compact">
-          <label>
-            饮水 ml
-            <input id="water" name="water" type="number" min="0" max="10000" step="50" placeholder="例如 1800">
-          </label>
-          <label>
-            运动
-            <input id="exercise" name="exercise" type="text" placeholder="快走 40 分钟">
-          </label>
-          <label>
-            心情
-            <select id="mood" name="mood">
-              <option value="平稳">平稳</option>
-              <option value="轻松">轻松</option>
-              <option value="有点饿">有点饿</option>
-              <option value="压力大">压力大</option>
-              <option value="很自律">很自律</option>
-            </select>
-          </label>
-        </div>
-
-        <label>
-          备注
-          <textarea id="notes" name="notes" rows="3" placeholder="睡眠、聚餐、体感、明天想调整的地方"></textarea>
-        </label>
-
-        <div class="actions">
-          <button type="submit" class="primary-button">保存打卡</button>
-          <button type="button" class="secondary-button" id="exportData">导出记录</button>
-        </div>
+        <div class="section-head"><div><p class="kicker">DAILY JOURNAL</p><h2 id="formTitle">今日打卡</h2></div><span id="saveStatus" class="save-status" role="status">正在载入…</span></div>
+        <div class="form-grid"><label>日期<input id="date" name="date" type="date" required></label><label>体重 · kg<input id="weight" name="weight" type="number" min="20" max="300" step="0.1" placeholder="例如 72.5"></label><label>目标体重 · kg<input id="targetWeight" name="targetWeight" type="number" min="20" max="300" step="0.1" placeholder="例如 65"></label></div>
+        <div class="meal-section-head"><h3>每餐照片</h3><label class="toggle-label"><input id="autoAnalyze" type="checkbox">上传后自动估算</label></div>
+        <p class="field-hint" id="aiSummary">照片仅存于本机；启用 AI 识别后，会将所选照片发送至识别服务。</p>
+        <div id="mealGrid" class="meal-grid" aria-label="每餐照片"></div>
+        <div class="form-grid compact"><label>饮水 · ml<input id="water" name="water" type="number" min="0" max="10000" step="50" placeholder="例如 1800"></label><label>运动<input id="exercise" name="exercise" type="text" maxlength="200" placeholder="快走 40 分钟"></label><label>心情<select id="mood" name="mood"><option>平稳</option><option>轻松</option><option>有点饿</option><option>压力大</option><option>很自律</option></select></label></div>
+        <label class="notes-field">记录几句<textarea id="notes" name="notes" rows="2" maxlength="2000" placeholder="今天吃了什么，感觉怎么样？"></textarea></label>
+        <div class="form-footer"><div><span class="metric-label" id="calorieDateLabel">当日已记录热量</span><strong id="calorieStatus">0 kcal</strong></div><button type="submit" id="saveEntry" class="primary-button">保存打卡 <span aria-hidden="true">✓</span></button></div><p class="field-hint">未填的餐次不计入热量。草稿自动保存在本机，点击“保存打卡”后计入历史。</p>
       </form>
-
-      <aside class="side-panel">
-        <div class="section-head">
-          <div>
-            <p class="kicker">Progress</p>
-            <h2>趋势</h2>
-          </div>
-        </div>
-        <div class="progress-card">
-          <span class="metric-label">距离目标</span>
-          <strong id="targetGap">--</strong>
-          <div class="bar-track" aria-hidden="true"><span id="targetBar"></span></div>
-        </div>
-        <div class="progress-card">
-          <span class="metric-label">今日总卡路里</span>
-          <strong id="calorieStatus">0 kcal</strong>
-        </div>
-        <div class="chart-wrap">
-          <canvas id="weightChart" width="640" height="260" aria-label="最近体重趋势图"></canvas>
-        </div>
-        <div class="tips">
-          <p>今天的小重点</p>
-          <ul>
-            <li>每餐可从相册选择，也可直接拍照。</li>
-            <li>每餐卡路里需要手动输入，系统只做汇总。</li>
-            <li>照片里尽量拍到主食、蛋白质和饮料。</li>
-          </ul>
-        </div>
-      </aside>
+      <aside class="side-panel"><div class="section-head"><div><p class="kicker">A LITTLE PROGRESS</p><h2>看见每一点变化</h2></div></div><div class="progress-card"><span class="metric-label">最近记录体重</span><strong id="latestWeight">— <small>kg</small></strong><p id="targetGap">记录体重后查看与目标的距离</p></div><div class="chart-heading">最近 14 次体重记录</div><div class="chart-wrap"><canvas id="weightChart" width="640" height="300" role="img" aria-label="体重趋势，记录两天以上后显示"></canvas></div><div class="tips"><p>让记录更轻松</p><ul><li>相册、拍照均可，点照片可放大。</li><li>上传后可单独删除，也可以重新选择。</li><li>AI 热量是估算，份量和用油可让结果有较大差异；请核对后调整。</li></ul></div><div class="local-note"><span aria-hidden="true">⌂</span><div><strong>你的记录，留在本机</strong><p>换设备或清理浏览器前，请导出备份。此版本不跨设备同步。</p></div></div></aside>
     </section>
-
-    <section class="history-section" aria-label="历史打卡">
-      <div class="section-head">
-        <div>
-          <p class="kicker">History</p>
-          <h2>历史记录</h2>
-        </div>
-        <div class="filter-row">
-          <input id="searchInput" type="search" placeholder="搜索运动、备注或日期">
-          <button class="icon-button" type="button" id="clearAll" title="清空所有记录" aria-label="清空所有记录">
-            <span aria-hidden="true">×</span>
-          </button>
-        </div>
-      </div>
-      <div id="emptyState" class="empty-state">
-        还没有记录。先保存今天的打卡，第一条线就画下来了。
-      </div>
-      <div id="historyList" class="history-list"></div>
-    </section>
+    <section class="history-section" aria-label="历史打卡"><div class="section-head"><div><p class="kicker">LOOK BACK</p><h2>每一天，都算数 <span id="recordCount" class="count-badge">0</span></h2></div><div class="backup-actions"><button type="button" id="exportData" class="secondary-button">导出备份</button><button type="button" id="importTrigger" class="secondary-button">恢复备份</button><input type="file" id="importData" accept="application/json,.json" hidden></div></div><div class="history-toolbar"><input id="searchInput" type="search" aria-label="搜索记录" placeholder="搜索日期、运动或备注"><button type="button" id="clearAll" class="text-button danger">清空记录</button></div><div id="emptyState" class="empty-state">还没有记录。先拍下今天的一餐吧。</div><div id="historyList" class="history-list"></div></section>
+    <footer class="page-footer">认真吃饭，温柔记录。<span>每日减脂打卡 · 增强版</span></footer>
   </main>
-
-  <template id="historyItemTemplate">
-    <article class="history-item">
-      <div class="history-date">
-        <strong data-field="date"></strong>
-        <span data-field="mood"></span>
-      </div>
-      <div class="history-main">
-        <div class="history-metrics">
-          <span data-field="weight"></span>
-          <span data-field="calories"></span>
-          <span data-field="water"></span>
-        </div>
-        <div class="history-photos" data-field="mealPhotos"></div>
-        <small data-field="extra"></small>
-      </div>
-      <div class="item-actions">
-        <button type="button" data-action="edit">编辑</button>
-        <button type="button" data-action="delete">删除</button>
-      </div>
-    </article>
-  </template>
-
-  <script src="./app.js"></script>
+  <dialog id="settingsDialog"><form method="dialog" class="dialog-head"><h2>照片识别设置</h2><button class="icon-button" aria-label="关闭设置">×</button></form><p id="serviceStatus" class="notice">正在检查识别服务…</p><p>启用后，所选餐食照片会发送到 AI 识别服务，估算食物、份量和热量。结果可逐项修改，识别失败不会影响照片保存。</p><label>识别访问口令<input id="accessToken" type="password" autocomplete="off" placeholder="由部署者设置，仅在当前页面使用"></label><p class="field-hint">口令不会写入备份或长期保存。未开通识别时，仍可手动输入每餐热量。</p><div class="dialog-actions"><button id="checkService" type="button" class="secondary-button">检查服务</button><button id="saveSettings" type="button" class="primary-button">完成</button></div></dialog>
+  <dialog id="photoDialog" class="photo-dialog"><form method="dialog"><button class="photo-close" aria-label="关闭照片">×</button></form><img id="largePhoto" alt="餐食照片放大图"></dialog>
+  <div id="toast" class="toast" role="status" hidden><span id="toastText"></span><button id="undoAction" type="button" hidden>撤销</button><button id="closeToast" type="button" aria-label="关闭提示">×</button></div>
+  <script src="./core.js"></script><script src="./storage.js"></script><script src="./app.js"></script>
 </body>
 </html>
