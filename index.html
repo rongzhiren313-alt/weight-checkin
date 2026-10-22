@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>每日减脂打卡</title><meta name="theme-color" content="#2f7d5c">
   <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="减脂打卡">
-  <link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icons/icon-192.png"><link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icons/icon-192.png"><link rel="stylesheet" href="./styles.css?v=20261022-1800">
 </head>
 <body>
   <main class="app-shell">
@@ -33,6 +33,6 @@
   <dialog id="settingsDialog"><form method="dialog" class="dialog-head"><h2>照片识别设置</h2><button class="icon-button" aria-label="关闭设置">×</button></form><p id="serviceStatus" class="notice">正在检查识别服务…</p><p>启用后，所选餐食照片会发送到 AI 识别服务，估算食物、份量和热量。结果可逐项修改，识别失败不会影响照片保存。</p><label>识别访问口令<input id="accessToken" type="password" autocomplete="off" placeholder="由部署者设置，仅在当前页面使用"></label><p class="field-hint">口令不会写入备份或长期保存。未开通识别时，仍可手动输入每餐热量。</p><div class="dialog-actions"><button id="checkService" type="button" class="secondary-button">检查服务</button><button id="saveSettings" type="button" class="primary-button">完成</button></div></dialog>
   <dialog id="photoDialog" class="photo-dialog"><form method="dialog"><button class="photo-close" aria-label="关闭照片">×</button></form><img id="largePhoto" alt="餐食照片放大图"></dialog>
   <div id="toast" class="toast" role="status" hidden><span id="toastText"></span><button id="undoAction" type="button" hidden>撤销</button><button id="closeToast" type="button" aria-label="关闭提示">×</button></div>
-  <script src="./core.js"></script><script src="./storage.js"></script><script src="./app.js"></script>
+  <script src="./core.js?v=20261022-1800"></script><script src="./storage.js?v=20261022-1800"></script><script src="./app.js?v=20261022-1800"></script>
 </body>
 </html>

@@ -58,13 +58,19 @@
     return Core.normalizeEntry(result);
   }
   function totals() {
+    const today = Core.todayISO(), todayEntry = date === today && $('date').value === today ? entry : draftCalories.has(today) ? { calories: draftCalories.get(today) } : records.find(item => item.date === today);
+    $('calorieStatus').textContent = `${Core.sumCalories(entry)} kcal${!entry.mealCalories && present(entry.legacyCalories) ? ' · 旧版总热量' : ''}`;
+    $('todayCalories').textContent = `${Core.sumCalories(todayEntry)} kcal`;
+    // A previous offline shell can briefly load a newer script during an update.
+    if (typeof Core.calorieBudget !== 'function' || !['entryBudgetSummary', 'todayBudget', 'dailyCalorieGoal', 'todayBudgetLabel', 'todayRemaining', 'calorieProgress'].every(id => $(id))) {
+      if ($('todayBudget')) $('todayBudget').hidden = true;
+      if ($('entryBudgetSummary')) $('entryBudgetSummary').hidden = true;
+      return;
+    }
     const current = Core.calorieBudget(entry);
-    $('calorieStatus').textContent = `${current.consumed} kcal${!entry.mealCalories && present(entry.legacyCalories) ? ' · 旧版总热量' : ''}`;
     $('entryBudgetSummary').textContent = `目标 ${current.goal} kcal · ${current.over > 0 ? `已超出 ${current.over}` : `还剩 ${current.remaining}`} kcal`;
     $('entryBudgetSummary').classList.toggle('over-budget', current.over > 0);
-    const today = Core.todayISO(), todayEntry = date === today && $('date').value === today ? entry : draftCalories.has(today) ? { calories: draftCalories.get(today) } : records.find(item => item.date === today);
     const budget = Core.calorieBudget(todayEntry);
-    $('todayCalories').textContent = `${budget.consumed} kcal`;
     $('dailyCalorieGoal').textContent = `${budget.goal} kcal`;
     $('todayBudgetLabel').textContent = budget.over > 0 ? '今日已超出' : '今日还剩';
     $('todayRemaining').textContent = `${budget.over > 0 ? budget.over : budget.remaining} kcal`;
