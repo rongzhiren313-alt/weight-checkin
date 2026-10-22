@@ -6,3 +6,18 @@
 @media(max-width:620px){.food-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.food-row>:first-child{grid-column:1/-1}}
 @media(max-width:520px){.meal-grid{grid-template-columns:1fr;gap:14px}.hero h1 br{display:initial}.hero-panel strong{font-size:22px;white-space:nowrap;letter-spacing:-.5px}.meal-content{padding:13px}.meal-heading{padding:10px 13px}.meal-heading small{display:initial}.photo-uploader{height:170px}.meal-actions{gap:8px}.remove-photo{margin-left:auto}.calorie-row{flex-wrap:nowrap}.calorie-row input{min-width:0}.analyze-button{min-height:44px;padding:0 13px}.small-button{min-height:40px;padding:6px 12px}}
 @media(max-width:360px){.hero-panel strong{font-size:20px}.hero-panel .metric-label{font-size:10px}}
+.hero-panel>.calorie-budget{display:block;border-top:1px solid #b8c6ab77;padding-top:13px;grid-column:1/-1}
+.calorie-budget .budget-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:7px}
+.calorie-budget .budget-row strong{font-size:21px;white-space:nowrap}
+.calorie-budget progress{display:block;width:100%;height:8px;appearance:none;border:0;border-radius:8px;overflow:hidden;background:#c7d8bd;color:var(--green);accent-color:var(--green)}
+.calorie-budget progress::-webkit-progress-bar{background:#c7d8bd;border-radius:8px}
+.calorie-budget progress::-webkit-progress-value{background:var(--green);border-radius:8px}
+.calorie-budget progress::-moz-progress-bar{background:var(--green);border-radius:8px}
+.calorie-budget p{font-size:11px;color:#62745e;margin:7px 0 0}
+.calorie-budget.over-budget #todayRemaining,.calorie-budget.over-budget #todayBudgetLabel,.budget-summary.over-budget{color:var(--danger)}
+.calorie-budget.over-budget progress{accent-color:var(--danger);color:var(--danger)}
+.calorie-budget.over-budget progress::-webkit-progress-value{background:var(--danger)}
+.calorie-budget.over-budget progress::-moz-progress-bar{background:var(--danger)}
+.form-footer>div{min-width:0}.form-footer .primary-button{flex-shrink:0}
+.form-footer .budget-summary{font-size:12px;color:var(--green-dark);margin:0;overflow-wrap:anywhere}
+.form-footer .budget-summary.over-budget{color:var(--danger)}

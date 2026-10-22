@@ -14,7 +14,7 @@
   let queue = Promise.resolve(), session = 0, epoch = 0, revision = 0, draftedRevision = 0;
   let draftTimer, toastTimer, undo = null, token = '', installPrompt = null;
   let service = { checked: false, configured: false, reason: '正在检查识别服务…' };
-  const draftVersions = new Map(), photoVersions = new Map(), calorieVersions = new Map(), jobs = new Map(), requests = new Map(), ui = new Map();
+  const draftVersions = new Map(), draftCalories = new Map(), photoVersions = new Map(), calorieVersions = new Map(), jobs = new Map(), requests = new Map(), ui = new Map();
 
   function element(tag, className, text) {
     const result = document.createElement(tag);
@@ -58,9 +58,19 @@
     return Core.normalizeEntry(result);
   }
   function totals() {
-    $('calorieStatus').textContent = `${Core.sumCalories(entry)} kcal${!entry.mealCalories && present(entry.legacyCalories) ? ' · 旧版总热量' : ''}`;
-    const today = Core.todayISO(), todayEntry = date === today && $('date').value === today ? entry : records.find(item => item.date === today);
-    $('todayCalories').textContent = `${Core.sumCalories(todayEntry)} kcal`;
+    const current = Core.calorieBudget(entry);
+    $('calorieStatus').textContent = `${current.consumed} kcal${!entry.mealCalories && present(entry.legacyCalories) ? ' · 旧版总热量' : ''}`;
+    $('entryBudgetSummary').textContent = `目标 ${current.goal} kcal · ${current.over > 0 ? `已超出 ${current.over}` : `还剩 ${current.remaining}`} kcal`;
+    $('entryBudgetSummary').classList.toggle('over-budget', current.over > 0);
+    const today = Core.todayISO(), todayEntry = date === today && $('date').value === today ? entry : draftCalories.has(today) ? { calories: draftCalories.get(today) } : records.find(item => item.date === today);
+    const budget = Core.calorieBudget(todayEntry);
+    $('todayCalories').textContent = `${budget.consumed} kcal`;
+    $('dailyCalorieGoal').textContent = `${budget.goal} kcal`;
+    $('todayBudgetLabel').textContent = budget.over > 0 ? '今日已超出' : '今日还剩';
+    $('todayRemaining').textContent = `${budget.over > 0 ? budget.over : budget.remaining} kcal`;
+    $('todayBudget').classList.toggle('over-budget', budget.over > 0);
+    $('calorieProgress').max = budget.goal; $('calorieProgress').value = Math.min(budget.consumed, budget.goal);
+    $('calorieProgress').setAttribute('aria-label', `今日已记录 ${budget.consumed} 大卡，目标 ${budget.goal} 大卡，${budget.over > 0 ? `已超出 ${budget.over}` : `还剩 ${budget.remaining}`} 大卡`);
   }
   function draftNow() {
     clearTimeout(draftTimer);
@@ -69,6 +79,7 @@
     return enqueue(async () => {
       if (currentEpoch !== epoch || version !== draftVersions.get(targetDate)) return;
       await Store.writeDraft(targetDate, snapshot);
+      draftCalories.set(targetDate, Core.sumCalories(snapshot));
       if (targetDate === date && currentSession === session && revision === currentRevision) { draftedRevision = currentRevision; status('草稿已存本机 · 待保存打卡'); }
     });
   }
@@ -151,6 +162,7 @@
     try {
       const draft = await enqueue(() => Store.readDraft(nextDate)); if (version !== session) return;
       if (draft && (typeof draft !== 'object' || Array.isArray(draft) || draft.date !== nextDate)) throw new Error('该日期草稿格式异常，请先导出已保存记录。');
+      if (draft) draftCalories.set(nextDate, Core.sumCalories(draft)); else draftCalories.delete(nextDate);
       renderEntry(draft || records.find(item => item.date === nextDate) || { date: nextDate, mealPhotos: {}, mealCalories: {} }, Boolean(draft));
     } finally { if (version === session) { loading = false; controls(); } }
   }
@@ -173,7 +185,7 @@
     MEALS.forEach(([meal]) => cancel(meal)); clearTimeout(draftTimer); draftVersions.set(date, (draftVersions.get(date) || 0) + 1); saving = true; controls(); status('正在保存…');
     try {
       await mutate(items => [...items.filter(item => item.date !== targetDate), value]);
-      try { await enqueue(() => Store.deleteDraft(targetDate)); }
+      try { await enqueue(() => Store.deleteDraft(targetDate)); draftCalories.delete(targetDate); }
       catch (error) { status('记录已保存，旧草稿未清理', true); toast(`记录已保存，但旧草稿未清理：${error.message}`); return; }
       if (version === session) { renderEntry(value); dirty = false; status('已保存于本机', false); }
       toast('打卡已保存到本机，照片和热量已更新。');
@@ -199,9 +211,10 @@
     await enqueue(async () => {
       if (operationEpoch !== epoch) return;
       const draft = await Store.readDraft(targetDate);
-      if (draft?.mealPhotos?.[meal] === photo) { clearPhoto(draft, meal); await Store.writeDraft(targetDate, draft); }
+      if (draft?.mealPhotos?.[meal] === photo) { clearPhoto(draft, meal); await Store.writeDraft(targetDate, draft); draftCalories.set(targetDate, Core.sumCalories(draft)); }
     });
     if (operationEpoch !== epoch) return;
+    totals();
     if (date === targetDate && entry.mealPhotos?.[meal] === photo) {
       cancel(meal); photoVersions.set(meal, (photoVersions.get(meal) || 0) + 1); clearPhoto(entry, meal); renderMeal(meal);
       if (dirty) { changed(); await draftNow(); } else totals(); controls();
@@ -211,9 +224,9 @@
         const target = items.find(item => item.date === targetDate); if (!target) throw new Error('该日记录已删除，无法单独恢复照片。');
         if (target.mealPhotos?.[meal]) throw new Error('这餐已有新照片，未覆盖现有内容。'); restoreMeal(target, meal, saved); return items;
       });
-      await enqueue(async () => { const draft = await Store.readDraft(targetDate); if (draft && !draft.mealPhotos?.[meal]) { restoreMeal(draft, meal, saved); await Store.writeDraft(targetDate, draft); } });
+      await enqueue(async () => { const draft = await Store.readDraft(targetDate); if (draft && !draft.mealPhotos?.[meal]) { restoreMeal(draft, meal, saved); await Store.writeDraft(targetDate, draft); draftCalories.set(targetDate, Core.sumCalories(draft)); } });
       if (date === targetDate && !entry.mealPhotos?.[meal]) { restoreMeal(entry, meal, saved); renderMeal(meal); if (dirty) { changed(); await draftNow(); } else totals(); controls(); }
-      toast('历史照片已恢复。');
+      totals(); toast('历史照片已恢复。');
     });
   }
   async function removeDay(targetDate) {
@@ -222,12 +235,13 @@
     if (targetDate === date) await draftNow();
     const oldDraft = await enqueue(() => Store.readDraft(targetDate)); draftVersions.set(targetDate, (draftVersions.get(targetDate) || 0) + 1);
     await mutate(items => items.filter(item => item.date !== targetDate)); await enqueue(() => Store.deleteDraft(targetDate));
+    draftCalories.delete(targetDate); totals();
     if (operationEpoch !== epoch) return;
     if (targetDate === date) { session += 1; cancelAll(); renderEntry({ date, mealPhotos: {}, mealCalories: {} }); }
     toast(`${targetDate} 的记录已删除。`, async () => {
       await mutate(items => { if (items.some(item => item.date === targetDate)) throw new Error('该日期已有新记录，未覆盖当前内容。'); return [...items, original]; });
-      if (oldDraft && !await enqueue(() => Store.readDraft(targetDate))) await enqueue(() => Store.writeDraft(targetDate, oldDraft));
-      if (targetDate === date && !dirty) await loadDate(date); toast('整天记录已恢复，已有的新草稿已保留。');
+      if (oldDraft && !await enqueue(() => Store.readDraft(targetDate))) { await enqueue(() => Store.writeDraft(targetDate, oldDraft)); draftCalories.set(targetDate, Core.sumCalories(oldDraft)); }
+      if (targetDate === date && !dirty) await loadDate(date); totals(); toast('整天记录已恢复，已有的新草稿已保留。');
     });
   }
   function history() {
@@ -272,7 +286,11 @@
     canvas.setAttribute('aria-label', `最近 ${data.length} 次体重，从 ${values[0]} 到 ${values.at(-1)} 千克`);
   }
   function refresh() {
-    const today = Core.todayISO(); $('streakDays').textContent = `${Core.calculateStreak(records, today)} 天`;
+    const today = Core.todayISO(); $('date').max = today;
+    $('todayLabel').textContent = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date());
+    $('formTitle').textContent = date === today ? '今日打卡' : `${date} 打卡`;
+    $('calorieDateLabel').textContent = `${date === today ? '今日' : date}已记录热量`;
+    $('streakDays').textContent = `${Core.calculateStreak(records, today)} 天`;
     $('weekCount').textContent = `${new Set(records.filter(item => item.date <= today && Core.sameWeek(item.date, today)).map(item => item.date)).size} 天`;
     const latest = sort(records).find(item => item.date <= today && present(item.weight)); $('latestWeight').textContent = latest ? `${latest.weight} kg` : '— kg';
     if (latest && present(latest.targetWeight)) { const gap = Number(latest.weight) - Number(latest.targetWeight); $('targetGap').textContent = gap > 0 ? `与目标相差 ${gap.toFixed(1)} kg，按自己的节奏来` : `已到目标附近，与目标相差 ${Math.abs(gap).toFixed(1)} kg`; }
@@ -383,7 +401,7 @@
   async function clearAll() {
     if (!confirm('确定清空所有已保存记录、照片和全部本机草稿吗？此操作无法撤销，请先导出备份。')) return;
     clearTimeout(draftTimer); epoch += 1; session += 1; cancelAll(); draftVersions.clear(); saving = true; controls();
-    try { const result = await enqueue(() => Store.clearAll()); records = []; date = Core.todayISO(); dirty = false; renderEntry({ date, mealPhotos: {}, mealCalories: {} }); refresh(); toast(result.legacyCleanupWarning || '记录、照片和草稿已全部清空。'); }
+    try { const result = await enqueue(() => Store.clearAll()); records = []; draftCalories.clear(); date = Core.todayISO(); dirty = false; renderEntry({ date, mealPhotos: {}, mealCalories: {} }); refresh(); toast(result.legacyCleanupWarning || '记录、照片和草稿已全部清空。'); }
     finally { saving = false; controls(); }
   }
   function network() { $('networkStatus').textContent = navigator.onLine ? '在线 · 本机记录' : '离线 · 本机记录'; serviceUI(); }
@@ -404,7 +422,7 @@
     on(window, 'beforeinstallprompt', event => { event.preventDefault(); installPrompt = event; $('installApp').hidden = false; $('installHint').hidden = true; });
     on($('installApp'), 'click', async () => { if (installPrompt) { await installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; $('installApp').hidden = true; } });
     on(window, 'appinstalled', () => { installPrompt = null; $('installApp').hidden = true; $('installHint').hidden = true; });
-    on(document, 'visibilitychange', async () => { if (document.hidden) await draftNow(); });
+    on(document, 'visibilitychange', async () => { if (document.hidden) await draftNow(); else if (ready) refresh(); });
     window.addEventListener('beforeunload', event => { if (jobs.size || (dirty && revision !== draftedRevision)) { event.preventDefault(); event.returnValue = ''; } });
     if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) $('installHint').hidden = false;
     network(); controls();

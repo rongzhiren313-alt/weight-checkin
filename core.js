@@ -6,6 +6,7 @@
   "use strict";
 
   const MEALS = ["breakfast", "lunch", "dinner", "snacks"];
+  const DAILY_CALORIE_GOAL = 1800;
   const DAY_MS = 86400000;
   const MAX_PHOTO_LENGTH = 12 * 1024 * 1024;
   const own = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
@@ -45,6 +46,16 @@
       return Math.round(total * 100) / 100;
     }
     return numericValue(entry.legacyCalories) ?? numericValue(entry.calories) ?? 0;
+  }
+
+  function calorieBudget(entry) {
+    const consumed = sumCalories(entry);
+    return {
+      goal: DAILY_CALORIE_GOAL,
+      consumed,
+      remaining: Math.round(Math.max(0, DAILY_CALORIE_GOAL - consumed) * 100) / 100,
+      over: Math.round(Math.max(0, consumed - DAILY_CALORIE_GOAL) * 100) / 100,
+    };
   }
 
   function normalizeEntry(entry) {
@@ -213,5 +224,5 @@
     });
   }
 
-  return { todayISO, normalizeEntry, calculateStreak, sameWeek, validateRecords, sumCalories };
+  return { todayISO, normalizeEntry, calculateStreak, sameWeek, validateRecords, sumCalories, DAILY_CALORIE_GOAL, calorieBudget };
 });

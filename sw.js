@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "weight-checkin-app";
-const CACHE_NAME = "weight-checkin-app-v5";
+const CACHE_NAME = "weight-checkin-app-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
